@@ -279,20 +279,7 @@ public class Node implements NodeInterface {
                 case "W" -> {
                     String[] kv = extractKeyValue(tokens.length > 2 ? tokens[2] : "");
                     if (kv != null && kv[0] != null && kv[1] != null) {
-
-                        boolean keyExists = keyValuePairs.containsKey(kv[0]);
-                        boolean isClosest = nearestNodeResponses.containsKey(kv[0]);
-
                         keyValuePairs.put(kv[0], kv[1]);
-
-                        if (keyExists) {
-                            msgResponse(addr, port, tx + " X R"); //KV replaced
-                        } else if (isClosest) {
-                            msgResponse(addr, port, tx + " X A"); //KV stored
-                        } else {
-                            msgResponse(addr, port, tx + " X X");
-                        }
-
                         if (kv[0].startsWith("N:")) {
                             try {
                                 String[] ipInfo = kv[1].split(":");
@@ -303,8 +290,31 @@ public class Node implements NodeInterface {
                     }
                 }
                 case "X" -> {
+                    String[] kv = extractKeyValue(tokens.length > 2 ? tokens[2] : "");
+
+                    boolean keyExists = keyValuePairs.containsKey(kv[0]);
+                    boolean isClosest = nearestNodeResponses.containsKey(kv[0]);
+
                     if (tokens.length > 2) {
                         String responseChar = tokens[2].trim();
+
+                        switch (responseChar) {
+                            case "R" -> {
+                                if (keyExists) {
+                                    keyValuePairs.put(kv[0], kv[1]);
+                                    msgResponse(addr, port, tx + " X R");
+                                }
+                            }
+                            case "A" -> {
+                                if (isClosest) {
+                                    keyValuePairs.put(kv[0], kv[1]);
+                                    msgResponse(addr, port, tx + " X A");
+                                }
+                            }
+                            case "X" -> {
+                                msgResponse(addr, port, tx + " X X");
+                            }
+                        }
                     } 
                 }
         }
@@ -481,4 +491,3 @@ public class Node implements NodeInterface {
         return 256;
     }
 }
-
