@@ -212,16 +212,16 @@ public class Node implements NodeInterface {
                                 return Integer.MAX_VALUE;
                             }
                         }));
-                        StringBuilder resp = new StringBuilder(tx + " O");
+                        StringBuilder response = new StringBuilder(tx + " O");
                         for (int i = 0; i < Math.min(3, options.size()); i++) {
                             String name = options.get(i);
                             InetSocketAddress target = knownNodes.get(name);
                             if (target != null) {
                                 String val = target.getAddress().getHostAddress() + ":" + target.getPort();
-                                resp.append(" ").append(wrapMessage(name)).append(wrapMessage(val));
+                                response.append(" ").append(wrapMessage(name)).append(wrapMessage(val));
                             }
                         }
-                        msgResponse(addr, port, resp.toString());
+                        msgResponse(addr, port, response.toString());
                     }
                 }
                 case "O" -> {
