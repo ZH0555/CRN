@@ -190,49 +190,15 @@ public class Node implements NodeInterface {
             seenTransactions.add(tx);
 
             switch (kind) {
-                case "G" -> msgResponse(addr, port, tx + " H " + wrapMessage(nodeName));
+                case "G" -> { 
+                    msgResponse(addr, port, tx + " H " + wrapMessage(nodeName));
+                }
                 case "H" -> {
                     if (tokens.length > 2) {
                         String incoming = unwrapMessage(tokens[2]);
                         if (incoming != null)
                             knownNodes.put(incoming, new InetSocketAddress(addr, port));
                     }
-                }
-                case "W" -> {
-                    String[] kv = extractKeyValue(tokens.length > 2 ? tokens[2] : "");
-                    if (kv != null && kv[0] != null && kv[1] != null) {
-                        keyValuePairs.put(kv[0], kv[1]);
-                        if (kv[0].startsWith("N:")) {
-                            try {
-                                String[] ipInfo = kv[1].split(":");
-                                if (ipInfo.length == 2)
-                                    knownNodes.put(kv[0], new InetSocketAddress(ipInfo[0], Integer.parseInt(ipInfo[1])));
-                            } catch (Exception ignored) {}
-                        }
-                        msgResponse(addr, port, tx + " X A");
-                    }
-                }
-                case "R" -> {
-                    String query = unwrapMessage(tokens.length > 2 ? tokens[2] : "");
-                    if (query != null) {
-                        String reply = keyValuePairs.containsKey(query) ? keyValuePairs.get(query) : null;
-                        msgResponse(addr, port, tx + (reply != null ? " S Y " + wrapMessage(reply) : " S N "));
-                    }
-                }
-                case "S" -> {
-                    if (tokens.length > 2) {
-                        String[] parts = tokens[2].split(" ", 2);
-                        if (parts[0].equals("Y") && parts.length > 1)
-                            recentRead = unwrapMessage(parts[1]);
-                    }
-                }
-                case "E" -> {
-                    String k = unwrapMessage(tokens.length > 2 ? tokens[2] : "");
-                    boolean exist = k != null && keyValuePairs.containsKey(k);
-                    msgResponse(addr, port, tx + " F " + (exist ? "Y" : "N"));
-                }
-                case "F" -> {
-                    if (tokens.length > 2 && tokens[2].trim().equals("Y")) recentExistence = true;
                 }
                 case "N" -> {
                     if (tokens.length > 2) {
@@ -261,6 +227,15 @@ public class Node implements NodeInterface {
                 case "O" -> {
                     if (tokens.length > 2) nearestNodeResponses.put(tx, tokens[2]);
                 }
+                case "I" -> {
+                    if (tokens.length > 2) {
+                        String infoMessage = unwrapMessage(tokens[2]);
+                        if (infoMessage != null) {
+                            infoMessages.add(infoMessage);
+                            if (debugLogs) System.out.println("INFO: " + infoMessage);
+                        }
+                }
+                }
                 case "V" -> {
                     if (tokens.length > 2) {
                         String[] inner = tokens[2].split(" ", 2);
@@ -279,18 +254,45 @@ public class Node implements NodeInterface {
                         }
                     }
                 }
-                case "I" -> {
-                    if (tokens.length > 2) {
-                        String infoMessage = unwrapMessage(tokens[2]);
-                        if (infoMessage != null) {
-                            infoMessages.add(infoMessage);
-                            if (debugLogs) System.out.println("INFO: " + infoMessage);
-                        }
+                case "E" -> {
+                    String k = unwrapMessage(tokens.length > 2 ? tokens[2] : "");
+                    boolean exist = k != null && keyValuePairs.containsKey(k);
+                    msgResponse(addr, port, tx + " F " + (exist ? "Y" : "N"));
                 }
-            }
+                case "F" -> {
+                    if (tokens.length > 2 && tokens[2].trim().equals("Y")) recentExistence = true;
+                }
+                case "R" -> {
+                    String query = unwrapMessage(tokens.length > 2 ? tokens[2] : "");
+                    if (query != null) {
+                        String reply = keyValuePairs.containsKey(query) ? keyValuePairs.get(query) : null;
+                        msgResponse(addr, port, tx + (reply != null ? " S Y " + wrapMessage(reply) : " S N "));
+                    }
+                }
+                case "S" -> {
+                    if (tokens.length > 2) {
+                        String[] parts = tokens[2].split(" ", 2);
+                        if (parts[0].equals("Y") && parts.length > 1)
+                            recentRead = unwrapMessage(parts[1]);
+                    }
+                }
+                case "W" -> {
+                    String[] kv = extractKeyValue(tokens.length > 2 ? tokens[2] : "");
+                    if (kv != null && kv[0] != null && kv[1] != null) {
+                        keyValuePairs.put(kv[0], kv[1]);
+                        if (kv[0].startsWith("N:")) {
+                            try {
+                                String[] ipInfo = kv[1].split(":");
+                                if (ipInfo.length == 2)
+                                    knownNodes.put(kv[0], new InetSocketAddress(ipInfo[0], Integer.parseInt(ipInfo[1])));
+                            } catch (Exception ignored) {}
+                        }
+                        msgResponse(addr, port, tx + " X A");
+                    }
+                }
         }
         } catch (Exception e) {
-            if (debugLogs) System.err.println("Error message: " + e.getMessage());
+            System.err.println("Error message: " + e.getMessage());
         }
     }
 
@@ -334,7 +336,7 @@ public class Node implements NodeInterface {
         if (keyValuePairs.containsKey(key)) return keyValuePairs.get(key);
 
         String hash = byteToString(HashID.computeHashID(key));
-        Set<String> queried = new HashSet<>();
+        Set<String> querySet = new HashSet<>();
         Queue<String> queue = new LinkedList<>(knownNodes.keySet());
 
         if (knownNodes.isEmpty()) {
@@ -343,11 +345,11 @@ public class Node implements NodeInterface {
         }
 
         while (!queue.isEmpty()) {
-            String candidate = queue.poll();
-            if (queried.contains(candidate) || !knownNodes.containsKey(candidate)) continue;
-            queried.add(candidate);
+            String node = queue.poll();
+            if (querySet.contains(node) || !knownNodes.containsKey(node)) continue;
+            querySet.add(node);
 
-            InetSocketAddress target = knownNodes.get(candidate);
+            InetSocketAddress target = knownNodes.get(node);
             String txID = newTxn();
             if (checkExists) {
                 recentExistence = false;
@@ -384,7 +386,7 @@ public class Node implements NodeInterface {
                     String[] info = address.split(":");
                     InetSocketAddress peer = new InetSocketAddress(info[0], Integer.parseInt(info[1]));
                     knownNodes.put(nodeKey, peer);
-                    if (!queried.contains(nodeKey)) queue.add(nodeKey);
+                    if (!querySet.contains(nodeKey)) queue.add(nodeKey);
                 }
             }
         }
