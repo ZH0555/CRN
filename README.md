@@ -2,11 +2,11 @@ Build Instructions
 ==================
 
 1. Clone the repository
-git clone https://github.com/ZH0555/CRN1.git
-cd CRN1
+- git clone https://github.com/ZH0555/CRN1.git
+- cd CRN1
 
 2. Build the project
-mvn clean install
+- mvn clean install
 
 
 Working Functionality
