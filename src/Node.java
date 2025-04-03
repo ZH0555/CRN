@@ -333,7 +333,7 @@ public class Node implements NodeInterface {
             try {
                 socket.receive(datagram);
                 String received = new String(datagram.getData(), 0, datagram.getLength());
-                if (debugLogs) System.out.println("[INFO] " + received);
+                System.out.println("[INFO] " + received);
                 parseMessage(received, datagram.getAddress(), datagram.getPort());
             } catch (SocketTimeoutException ignored) {}
         }
