@@ -290,6 +290,11 @@ public class Node implements NodeInterface {
                         msgResponse(addr, port, tx + " X A");
                     }
                 }
+                case "X" -> {
+                    if (tokens.length > 2) {
+                        String responseChar = tokens[2].trim();
+                    } 
+                }
         }
         } catch (Exception e) {
             System.err.println("Error message: " + e.getMessage());
