@@ -2,7 +2,7 @@ Build Instructions
 ==================
 
 1. Clone the repository
-- git clone https://github.com/ZH0555/CRN1.git
+- git clone https://github.com/ZH0555/CRN.git
 - cd CRN1
 
 2. Build the project
