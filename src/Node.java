@@ -279,7 +279,20 @@ public class Node implements NodeInterface {
                 case "W" -> {
                     String[] kv = extractKeyValue(tokens.length > 2 ? tokens[2] : "");
                     if (kv != null && kv[0] != null && kv[1] != null) {
+
+                        boolean keyExists = keyValuePairs.containsKey(kv[0]);
+                        boolean isClosest = nearestNodeResponses.containsKey(kv[0]);
+
                         keyValuePairs.put(kv[0], kv[1]);
+
+                        if (keyExists) {
+                            msgResponse(addr, port, tx + " X R"); //KV replaced
+                        } else if (isClosest) {
+                            msgResponse(addr, port, tx + " X A"); //KV stored
+                        } else {
+                            msgResponse(addr, port, tx + " X X");
+                        }
+
                         if (kv[0].startsWith("N:")) {
                             try {
                                 String[] ipInfo = kv[1].split(":");
@@ -287,7 +300,6 @@ public class Node implements NodeInterface {
                                     knownNodes.put(kv[0], new InetSocketAddress(ipInfo[0], Integer.parseInt(ipInfo[1])));
                             } catch (Exception ignored) {}
                         }
-                        msgResponse(addr, port, tx + " X A");
                     }
                 }
                 case "X" -> {
