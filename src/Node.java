@@ -388,7 +388,7 @@ public class Node implements NodeInterface {
 
             long waitStart = System.currentTimeMillis();
             while (System.currentTimeMillis() - waitStart < 1000) {
-                handleIncomingMessages(100);
+                handleIncomingMessages(5000);
                 if ((checkExists && recentExistence) || (!checkExists && recentRead != null)) {
                     return checkExists ? "YES" : recentRead;
                 }
